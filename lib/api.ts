@@ -1,17 +1,9 @@
-import type { CaseDetail, CaseRecord, RecordingRecord, TokenResponse } from "./types";
+import type { CaseDetail, CaseRecord, RecordingRecord, TokenResponse, UserProfile } from "./types";
 
 export const BACKEND_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 function apiBase() {
-  if (typeof window === "undefined") {
-    return (process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
-  }
   return "/api/backend";
-}
-
-function serviceHeaders(): HeadersInit {
-  const key = process.env.EFFI_API_KEY;
-  return key ? { "X-API-Key": key } : {};
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -19,7 +11,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...serviceHeaders(),
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
@@ -31,10 +22,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function listCases(params?: { q?: string; status?: string }) {
+export function getMe() {
+  return request<UserProfile>("/me");
+}
+
+export function listCases(params?: { q?: string; status?: string; scope?: "all" | "mine" }) {
   const query = new URLSearchParams();
   if (params?.q) query.set("q", params.q);
   if (params?.status) query.set("status", params.status);
+  if (params?.scope) query.set("scope", params.scope);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return request<CaseRecord[]>(`/cases${suffix}`);
 }
@@ -66,6 +62,21 @@ export function mintToken(roomName: string, callId: string) {
       call_id: callId,
     }),
   });
+}
+
+export async function uploadRecording(callId: string, blob: Blob, filename = "call.webm") {
+  const body = new FormData();
+  body.append("file", blob, filename);
+  const response = await fetch(`${apiBase()}/calls/${callId}/recordings`, {
+    method: "POST",
+    body,
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `${response.status} ${response.statusText}`);
+  }
+  return response.json() as Promise<RecordingRecord>;
 }
 
 export function reviewRecording(id: string, qa_status: string, qa_notes = "") {

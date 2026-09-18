@@ -1,23 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
-import { AppShell, CaseDetailView } from "@/components";
-import { getCase } from "@/lib/api";
+import { redirect } from "next/navigation";
+import { getMe } from "@/lib/api-server";
+import { caseDeskHref, deskHref } from "@/lib/desk";
 
 export const dynamic = "force-dynamic";
 
 export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
-  await auth.protect();
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
   const { id } = await params;
-  let detail = null;
-  let error = "";
+  let staff = false;
   try {
-    detail = await getCase(id);
-  } catch (err) {
-    error = err instanceof Error ? err.message : "Case could not be loaded";
+    staff = (await getMe()).is_staff;
+  } catch {
+    staff = false;
   }
-
-  return (
-    <AppShell title={detail?.resident_name ?? "Case"}>
-      {detail ? <CaseDetailView initial={detail} /> : <p className="text-clay">{error}</p>}
-    </AppShell>
-  );
+  redirect(caseDeskHref(deskHref(staff), id));
 }

@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${sans.variable} font-sans antialiased`}>
-        <ClerkProvider appearance={clerkAppearance} afterSignOutUrl="/sign-in">
+        <ClerkProvider appearance={clerkAppearance}>
           {children}
         </ClerkProvider>
       </body>

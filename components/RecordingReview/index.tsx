@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { recordingAudioUrl, reviewRecording } from "@/lib/api";
 import { formatDate } from "@/lib/labels";
 import type { RecordingRecord } from "@/lib/types";
+import { LoadingState } from "../LoadingState";
 import { Button } from "../Button";
 import { Panel } from "../Panel";
 import type { RecordingReviewProps } from "./types";
@@ -35,10 +36,10 @@ function RecordingPlayer({ recording }: { recording: RecordingRecord }) {
   }, [recording.id, recording.status]);
 
   if (recording.status !== "ready") {
-    return <p className="text-sm text-ink/50">Recording is {recording.status}…</p>;
+    return <LoadingState label={`Recording is ${recording.status}…`} />;
   }
   if (!src) {
-    return <p className="text-sm text-ink/50">Loading audio…</p>;
+    return <LoadingState label="Loading audio" />;
   }
   return <audio className="w-full" controls preload="metadata" src={src} />;
 }
@@ -81,6 +82,7 @@ export function RecordingReview({ recordings, onReviewed }: RecordingReviewProps
               <Button
                 variant="outline"
                 size="sm"
+                loading={busy === recording.id + "approved"}
                 disabled={Boolean(busy)}
                 onClick={() => void review(recording, "approved")}
               >
@@ -89,6 +91,7 @@ export function RecordingReview({ recordings, onReviewed }: RecordingReviewProps
               <Button
                 variant="outline"
                 size="sm"
+                loading={busy === recording.id + "flagged"}
                 disabled={Boolean(busy)}
                 onClick={() => void review(recording, "flagged")}
               >
