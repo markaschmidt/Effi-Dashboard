@@ -1,0 +1,13 @@
+.env
+.env.local
+.env*.local
+node_modules/
+.next/
+out/
+dist/
+tsconfig.tsbuildinfo
+*.log
+# Graphify is local-only — do not publish graphs or caches
+graphify-out/
+.graphify_python
+.graphify/
