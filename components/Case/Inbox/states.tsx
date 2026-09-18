@@ -12,32 +12,35 @@ export function useCaseInboxState({ viewer, scope = "mine" }: Pick<CaseInboxProp
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  async function refresh() {
-    setLoading(true);
+  async function refresh(showLoading = false) {
+    if (showLoading) setLoading(true);
     try {
       setCases(sortCasesByRecent(await listCases({ scope })));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load cases");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
   useEffect(() => {
-    void refresh();
+    void refresh(true);
   }, [scope]);
 
-  useRealtime((event) => {
-    if (event.type !== "case.created" && event.type !== "case.updated") return;
-    const incoming = event.payload as unknown as CaseRecord;
-    if (scope !== "all" && incoming.owner_id !== viewer.id) return;
-    if (event.type === "case.created") {
-      setCases((current) => sortCasesByRecent([incoming, ...current.filter((item) => item.id !== incoming.id)]));
-      return;
-    }
-    setCases((current) => current.map((item) => (item.id === incoming.id ? { ...item, ...incoming } : item)));
-  });
+  useRealtime(
+    (event) => {
+      if (event.type !== "case.created" && event.type !== "case.updated") return;
+      const incoming = event.payload as unknown as CaseRecord;
+      if (scope !== "all" && incoming.owner_id !== viewer.id) return;
+      if (event.type === "case.created") {
+        setCases((current) => sortCasesByRecent([incoming, ...current.filter((item) => item.id !== incoming.id)]));
+        return;
+      }
+      setCases((current) => current.map((item) => (item.id === incoming.id ? { ...item, ...incoming } : item)));
+    },
+    () => void refresh(),
+  );
 
   function patchCase(updated: CaseRecord) {
     setCases((current) => current.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));

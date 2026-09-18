@@ -4,9 +4,14 @@ import { useEffect, useRef } from "react";
 import { wsUrl } from "./api";
 import type { RealtimeEvent } from "./types";
 
-export function useRealtime(onEvent: (event: RealtimeEvent) => void) {
+export function useRealtime(
+  onEvent: (event: RealtimeEvent) => void,
+  onConnected?: () => void,
+) {
   const onEventRef = useRef(onEvent);
+  const onConnectedRef = useRef(onConnected);
   onEventRef.current = onEvent;
+  onConnectedRef.current = onConnected;
 
   useEffect(() => {
     let closed = false;
@@ -19,6 +24,7 @@ export function useRealtime(onEvent: (event: RealtimeEvent) => void) {
       const { token } = (await tokenResponse.json()) as { token?: string };
       if (!token || closed) return;
       socket = new WebSocket(wsUrl(token));
+      socket.onopen = () => onConnectedRef.current?.();
       socket.onmessage = (message) => {
         try {
           onEventRef.current(JSON.parse(message.data) as RealtimeEvent);

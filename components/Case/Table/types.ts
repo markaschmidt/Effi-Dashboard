@@ -1,5 +1,11 @@
 import type { CaseRecord } from "@/lib/types";
 
+export type CaseCluster = {
+  id: string;
+  phone: string;
+  cases: CaseRecord[];
+};
+
 export type CaseTableProps = {
   cases: CaseRecord[];
   deskHref: string;
